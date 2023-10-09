@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
+// @ts-ignore
 import OpenAI, { ChatCompletionRequestMessage } from "openai";
 import { checkoutCounter, increaseCounter } from "@/lib/api-limit";
 
