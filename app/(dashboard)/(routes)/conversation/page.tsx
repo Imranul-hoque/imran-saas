@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+
+// @ts-ignore
 import { ChatCompletionRequestMessage } from "openai";
 import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
