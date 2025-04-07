@@ -1,19 +1,21 @@
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-// @ts-ignore
-import OpenAI, { ChatCompletionRequestMessage } from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { checkoutCounter, increaseCounter } from "@/lib/api-limit";
 
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+const genai = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_API_KEY,
 });
 
-const instructionMessage: ChatCompletionRequestMessage = {
-  role: "system",
-  content:
-    "You are a code generator. You must answer only in markdown code snippets. Use code comments for explanations.",
+const instructionMessage = {
+  role: "user",
+  parts: [
+    {
+      text: "You are a code generator. You must answer only in markdown code snippets. Use code comments for explanations.",
+    },
+  ],
 };
+
 
 export async function POST(req: Request) {
   try {
@@ -25,8 +27,8 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    if (!openai.apiKey) {
-      return new NextResponse("OpenAI API Key not configured.", {
+    if (!process.env.GOOGLE_API_KEY) {
+      return new NextResponse("Google API Key not configured.", {
         status: 500,
       });
     }
@@ -41,15 +43,26 @@ export async function POST(req: Request) {
       return new NextResponse("Free tial has been expired", { status: 403 });
     }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [instructionMessage, ...messages],
+    const formattedMessages = [
+      instructionMessage,
+      ...messages.map((msg: any) => ({
+        role: msg.role,
+        parts: [{ text: msg.content }],
+      })),
+    ];
+
+    const response = await genai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: formattedMessages,
     });
 
     await increaseCounter();
 
 
-    return NextResponse.json(response.choices[0].message);
+     return NextResponse.json({
+       role: "assistant",
+       content: response.text,
+     });
   } catch (error) {
     console.log("[CODE_ERROR]", error);
     return new NextResponse("Internal Error", { status: 500 });

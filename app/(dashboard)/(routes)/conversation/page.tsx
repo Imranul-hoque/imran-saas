@@ -49,7 +49,10 @@ const ConversationPage = () => {
       const response = await axios.post("/api/conversation", {
         messages: newMessages,
       });
-      setMessages((current) => [...current, userMessage, response.data]);
+
+      const assistantMessage: ChatCompletionRequestMessage = response.data;
+
+      setMessages((current) => [...current, userMessage, assistantMessage]);
       form.reset();
     } catch (error: any) {
       if (error?.response?.status === 403) {

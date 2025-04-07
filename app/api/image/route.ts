@@ -1,10 +1,10 @@
+import { checkoutCounter, increaseCounter } from "@/lib/api-limit";
 import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
-import OpenAi from "openai";
-import { checkoutCounter, increaseCounter } from "@/lib/api-limit";
+import Replicate from "replicate";
 
-const openai = new OpenAi({
-  apiKey: process.env.OPENAI_API_KEY,
+const replicate = new Replicate({
+  auth: process.env.REPLICATE_API_TOKEN,
 });
 
 export async function POST(req: Request) {
@@ -17,8 +17,8 @@ export async function POST(req: Request) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    if (!openai.apiKey) {
-      return new NextResponse("OpenAI API Key not configured.", {
+    if (!process.env.REPLICATE_API_TOKEN) {
+      return new NextResponse("Replicate API Key not configured.", {
         status: 500,
       });
     }
@@ -41,16 +41,23 @@ export async function POST(req: Request) {
       return new NextResponse("Free tial has been expired", { status: 403 });
     }
 
-   
+    const input = {
+      raw: false,
+      prompt: prompt,
+      aspect_ratio: "3:2",
+      output_format: "jpg",
+      safety_tolerance: 2,
+    };
 
-    const response = await openai.images.generate({
-      prompt,
-      n: parseInt(amount, 10),
-      size: resolution,
+    const output = await replicate.run("black-forest-labs/flux-1.1-pro-ultra", {
+      input,
     });
+    
+    // @ts-ignore
+    const images = output?.map?.((image: { url: string }) => image.url) || [];
 
     await increaseCounter();
-    return NextResponse.json(response.data);
+    return NextResponse.json({ images });
   } catch (error) {
     console.log("[IMAGE_ERROR]", error);
     return new NextResponse("Internal Error", { status: 500 });

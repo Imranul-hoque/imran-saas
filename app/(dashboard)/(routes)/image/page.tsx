@@ -44,9 +44,9 @@ const PhotoPage = () => {
 
       const response = await axios.post('/api/image', values);
 
-      const urls = response.data.map((image: { url: string }) => image.url);
+      const imageUrls = response.data.images;
+     setPhotos(imageUrls);
 
-      setPhotos(urls);
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
